@@ -152,15 +152,6 @@ task.spawn(function()
             end
         end)
 
-    main:Seperator()
-    main:Button("Update Logs", function()
-        discord:Notification("Updates", "...", "Okay!")
-    end)
-    main:Button("Credits", function()
-        discord:Notification("Credits", "i forgot, will be putting soon", "Okay!")
-    end)
-end)
-
 local purchase = serv:Channel("Purchase Exploit")
 
 purchase:Label("Fake Purchaser!\nThis tricks server that you bought a DevProduct!")
