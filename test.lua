@@ -91,34 +91,6 @@ task.spawn(function()
     local discord = loadstring(game:HttpGet("https://raw.githubusercontent.com/artemy133563/Utilities/main/WyvernMenu",true))()
     local win = discord:Window("Wyvern UGC Hub v3 - Remaker by xsohe")
     local serv = win:Server("Wyvern Hub", "http://www.roblox.com/asset/?id=6031075938")
-    local main = serv:Channel("Home")
-    main:Label("\nThank you for using Wyvern!\nThe #2 UGC Games Penetration Testing Tool! (mine is still better)")
-    main:Label("Check out the other Discord channels to see our available tools!")
-    main:Seperator()
-    main:Toggle("Anti Kick (Client)", false, function(bool)
-        if bool == "true" then
-            local kick;
-            kick = hookmetamethod(game, "__namecall", function(obj, ...)
-                local args = {...}
-                local method = getnamecallmethod()
-                if method == "Kick" then
-                    if args[1] then
-                        discord:Notification("Kick Attempt", "There was an attempt to kick player from client.", "Okay.")
-                    end
-                    return nil
-                end
-                return kick(obj, unpack(args))
-            end)
-        end
-    end)
-    main:Seperator()
-    main:Button("Update Logs", function()
-        discord:Notification("Updates", "...", "Okay!")
-    end)
-    main:Button("Credits", function()
-        discord:Notification("Credits", "i forgot, will be putting soon", "Okay!")
-    end)
-
     local remotes = serv:Channel("Remotes")
     remotes:Label("\nFires all remotes in the game as an attempt to prompt the item.\nWarning: This can be risky and can fire a decoy remote!\n")
     remotes:Textbox("UGC Limited Item ID", "Enter Item ID that you wanna be included in the arguments...", false,
