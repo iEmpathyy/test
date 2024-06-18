@@ -189,40 +189,12 @@ task.spawn(function()
     end)
 end)
 
-local purchase = serv:Channel("Purchase Exploits")
-local success, x_x = pcall(function()
-    return HttpService:JSONDecode(game:HttpGet("https://apis.roblox.com/developer-products/v1/developer-products/list?universeId=" .. game.GameId .. "&page=1"))
-end)
-
-if not success then
-    discord:Notification("Error", "Failed to fetch developer products.", "Okay!")
-    return
-end
-
-local dnames = {}
-local dproductIds = {}
-if not x_x.DeveloperProducts then
-    table.insert(dnames, " ")
-else
-    pcall(function()
-        local currentPage = 1
-        repeat
-            local response = game:HttpGet("https://apis.roblox.com/developer-products/v1/developer-products/list?universeId=" .. tostring(game.GameId) .. "&page=" .. tostring(currentPage))
-            local decodedResponse = HttpService:JSONDecode(response)
-            local developerProducts = decodedResponse.DeveloperProducts
-            print("Page " .. currentPage .. ":")
-            for _, developerProduct in pairs(developerProducts) do
-                table.insert(dnames, developerProduct.Name)
-                table.insert(dproductIds, developerProduct.ProductId)
-            end
-            currentPage = currentPage + 1
-        until decodedResponse.FinalPage
-    end)
-end
+local purchase = serv:Channel("Purchase Exploit")
 
 purchase:Label("Fake Purchaser!\nThis tricks server that you bought a DevProduct!")
 purchase:Label("Only works in some games...")
 purchase:Label("Loop starts when the button to fire is pressed")
+
 purchase:Toggle("Loop Purchases (Rejoin To Stop)", false, function(bool)
     if bool then
         getgenv().wyvernlooppurchases = true
@@ -233,7 +205,20 @@ purchase:Toggle("Loop Purchases (Rejoin To Stop)", false, function(bool)
     end
 end)
 
-local index
+local dnames = {}
+local dproductIds = {}
+
+local success, x_x = pcall(function()
+    return HttpService:JSONDecode(game:HttpGet("https://apis.roblox.com/developer-products/v1/developer-products/list?universeId=" .. game.GameId .. "&page=1"))
+end)
+
+if success and x_x.DeveloperProducts then
+    for _, developerProduct in pairs(x_x.DeveloperProducts) do
+        table.insert(dnames, developerProduct.Name)
+        table.insert(dproductIds, developerProduct.ProductId)
+    end
+end
+
 purchase:Dropdown("Below is a list of all DevProducts in this game!", dnames, function(x)
     for i, name in ipairs(dnames) do
         if name == x then
@@ -244,6 +229,7 @@ purchase:Dropdown("Below is a list of all DevProducts in this game!", dnames, fu
 end)
 
 purchase:Label("If nothing shows above, no DevProducts found.")
+
 purchase:Button("Fire Selected Dev Product!", function()
     if index then
         local product = dproductIds[index]
@@ -280,9 +266,11 @@ end)
 
 purchase:Seperator()
 purchase:Label("Pretty much the same as the one above but for gamepass")
+
 local wyverngamepass = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.GameId .. "/game-passes?limit=100&sortOrder=1"))
 local gnames = {}
 local gproductIds = {}
+
 for i, v in pairs(wyverngamepass.data) do
     table.insert(gnames, v.name)
     table.insert(gproductIds, v.id)
@@ -299,6 +287,7 @@ purchase:Dropdown("Below is a list of all GamePass in this game!", gnames, funct
 end)
 
 purchase:Label("If nothing shows above, no GamePass found.")
+
 purchase:Button("Fire Selected Gamepass", function()
     if gamepass then
         pcall(function()
@@ -319,6 +308,7 @@ end)
 purchase:Seperator()
 purchase:Label("Signals to server that an item purchase failed.")
 purchase:Label("This can trick servers to reprompt an item!")
+
 local returnvalprompt = false
 purchase:Toggle("Item Purchase Success Return Value", returnvalprompt, function(bool)
     returnvalprompt = bool
@@ -341,4 +331,3 @@ purchase:Textbox("Item ID of the UGC item", "Enter the Item ID...", false, funct
         discord:Notification("Error", "That's... Not an Item ID.", "Okay!")
     end
 end)
-
