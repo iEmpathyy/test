@@ -91,9 +91,9 @@ task.spawn(function()
     local discord = loadstring(game:HttpGet("https://raw.githubusercontent.com/artemy133563/Utilities/main/WyvernMenu",true))()
     local win = discord:Window("Wyvern UGC Hub v3 - Remaker by xsohe")
     local serv = win:Server("Wyvern Hub", "http://www.roblox.com/asset/?id=6031075938")
-    local remotes = serv:Channel("Remotes")
-    remotes:Label("\nFires all remotes in the game as an attempt to prompt the item.\nWarning: This can be risky and can fire a decoy remote!\n")
-    remotes:Textbox("UGC Limited Item ID", "Enter Item ID that you wanna be included in the arguments...", false,
+    local main = serv:Channel("Remotes")
+    main:Label("\nFires all remotes in the game as an attempt to prompt the item.\nWarning: This can be risky and can fire a decoy remote!\n")
+    main:Textbox("UGC Limited Item ID", "Enter Item ID that you wanna be included in the arguments...", false,
         function(t)
             local tt = tonumber(t)
             if type(tt) == "number" then
@@ -104,7 +104,7 @@ task.spawn(function()
                 discord:Notification("Error", "That's... not an Item ID.", "Okay!")
             end
         end)
-    remotes:Dropdown("Remote Arguments...",
+    main:Dropdown("Remote Arguments...",
         {"No Arguments/Blank", "LocalPlayer", "Your Username", "UGC Item ID", "UGC Item ID, LocalPlayer",
          "LocalPlayer, UGC Item ID", "'UGC' as a string", "UGC Item ID, 'true' boolean", "'true' boolean",
          "literal lua code to prompt item", "loadstring prompt item"}, function(x)
